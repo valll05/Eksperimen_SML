@@ -1,0 +1,73 @@
+name: Preprocessing Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run preprocessing script
+        run: |
+          cd preprocessing
+          python automate_Christian-Gideon-Valent.py
+      
+      - name: List output files
+        run: |
+          echo "📂 Output files:"
+          ls -la preprocessing/iris_preprocessing/
+      
+      - name: Upload preprocessing results
+        uses: actions/upload-artifact@v4
+        with:
+          name: iris_preprocessing_results
+          path: preprocessing/iris_preprocessing/
+          retention-days: 30
+      
+      - name: Verify preprocessing output
+        run: |
+          echo "✅ Verifying preprocessing output..."
+          if [ -f "preprocessing/iris_preprocessing/train_data.csv" ]; then
+            echo "✅ train_data.csv exists"
+            head -5 preprocessing/iris_preprocessing/train_data.csv
+          else
+            echo "❌ train_data.csv not found"
+            exit 1
+          fi
+          
+          if [ -f "preprocessing/iris_preprocessing/test_data.csv" ]; then
+            echo "✅ test_data.csv exists"
+            head -5 preprocessing/iris_preprocessing/test_data.csv
+          else
+            echo "❌ test_data.csv not found"
+            exit 1
+          fi
+          
+          if [ -f "preprocessing/iris_preprocessing/scaler.pkl" ]; then
+            echo "✅ scaler.pkl exists"
+          else
+            echo "❌ scaler.pkl not found"
+            exit 1
+          fi
+          
+          echo ""
+          echo "🎉 All preprocessing outputs verified successfully!"
