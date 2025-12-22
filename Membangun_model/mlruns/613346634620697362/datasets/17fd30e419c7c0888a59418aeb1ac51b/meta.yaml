@@ -1,0 +1,10 @@
+digest: 5b37d831
+name: dataset
+profile: '{"num_rows": 120, "num_elements": 480}'
+schema: '{"mlflow_colspec": [{"type": "double", "name": "sepal length (cm)", "required":
+  true}, {"type": "double", "name": "sepal width (cm)", "required": true}, {"type":
+  "double", "name": "petal length (cm)", "required": true}, {"type": "double", "name":
+  "petal width (cm)", "required": true}]}'
+source: '{"tags": {"mlflow.user": "nhqfh", "mlflow.source.name": "modelling.py", "mlflow.source.type":
+  "LOCAL", "mlflow.source.git.commit": "331d376109daf212369ea9e6b1ab6ac73f782cd2"}}'
+source_type: code

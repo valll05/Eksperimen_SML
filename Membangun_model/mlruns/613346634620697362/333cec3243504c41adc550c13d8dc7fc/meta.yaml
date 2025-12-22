@@ -1,0 +1,14 @@
+artifact_uri: file:///D:\Eksperimen_SML_Christian-Gideon-Valent\Membangun_model\mlruns/613346634620697362/333cec3243504c41adc550c13d8dc7fc/artifacts
+end_time: 1766324803083
+entry_point_name: ''
+experiment_id: '613346634620697362'
+lifecycle_stage: active
+run_id: 333cec3243504c41adc550c13d8dc7fc
+run_name: Basic_Autolog
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1766324799538
+status: 3
+tags: []
+user_id: nhqfh
