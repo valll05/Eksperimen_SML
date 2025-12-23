@@ -1,11 +1,11 @@
 """
 Automate Preprocessing Script untuk Eksperimen SML
 Author: Christian Gideon Valent
-Dataset: Iris Dataset
+Dataset: Heart Disease Dataset (UCI)
 
 Script ini mengotomasi proses preprocessing data untuk Machine Learning.
 Tahapan yang dilakukan:
-1. Memuat dataset dari file CSV
+1. Memuat dataset dari file CSV atau download dari UCI
 2. Memisahkan fitur dan target
 3. Train-test split (80/20, stratified)
 4. Feature scaling menggunakan StandardScaler
@@ -16,7 +16,6 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
@@ -31,26 +30,75 @@ if sys.platform == 'win32':
 
 def create_raw_dataset(output_path):
     """
-    Membuat dataset mentah dari sklearn dan menyimpan ke file CSV.
+    Membuat dataset mentah dari UCI dan menyimpan ke file CSV.
+    Heart Disease Dataset dari UCI ML Repository.
     
     Args:
         output_path: Path untuk menyimpan file CSV
         
     Returns:
-        DataFrame: Dataset Iris dalam format DataFrame
+        DataFrame: Dataset Heart Disease dalam format DataFrame
     """
-    print("[INFO] Memuat dataset Iris dari sklearn...")
-    iris = load_iris()
+    print("[INFO] Memuat dataset Heart Disease dari UCI...")
     
-    # Konversi ke DataFrame
-    df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
-    df['target'] = iris.target
-    df['species'] = pd.Categorical.from_codes(iris.target, iris.target_names)
+    # URL dataset Heart Disease dari UCI
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data"
+    
+    # Column names sesuai dokumentasi UCI
+    column_names = [
+        'age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg',
+        'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal', 'target'
+    ]
+    
+    try:
+        # Download dari UCI
+        df = pd.read_csv(url, names=column_names, na_values='?')
+        print("[OK] Dataset berhasil diunduh dari UCI Repository")
+    except Exception as e:
+        print(f"[WARNING] Gagal download dari UCI: {e}")
+        print("[INFO] Menggunakan dataset alternatif...")
+        # Alternatif: buat sample dataset jika download gagal
+        df = create_sample_heart_dataset()
+    
+    # Handle missing values
+    df = df.dropna()
+    
+    # Convert target to binary (0 = no disease, 1 = disease)
+    # Original target: 0=no disease, 1-4=various stages of disease
+    df['target'] = (df['target'] > 0).astype(int)
     
     # Simpan ke file CSV
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df.to_csv(output_path, index=False)
     print(f"[OK] Dataset mentah disimpan ke: {output_path}")
+    
+    return df
+
+
+def create_sample_heart_dataset():
+    """
+    Membuat sample Heart Disease dataset jika download gagal.
+    Dataset ini mensimulasikan struktur Heart Disease UCI.
+    """
+    np.random.seed(42)
+    n_samples = 303
+    
+    df = pd.DataFrame({
+        'age': np.random.randint(29, 77, n_samples),
+        'sex': np.random.randint(0, 2, n_samples),
+        'cp': np.random.randint(0, 4, n_samples),
+        'trestbps': np.random.randint(94, 200, n_samples),
+        'chol': np.random.randint(126, 564, n_samples),
+        'fbs': np.random.randint(0, 2, n_samples),
+        'restecg': np.random.randint(0, 3, n_samples),
+        'thalach': np.random.randint(71, 202, n_samples),
+        'exang': np.random.randint(0, 2, n_samples),
+        'oldpeak': np.random.uniform(0, 6.2, n_samples).round(1),
+        'slope': np.random.randint(0, 3, n_samples),
+        'ca': np.random.randint(0, 4, n_samples),
+        'thal': np.random.randint(0, 4, n_samples),
+        'target': np.random.randint(0, 2, n_samples)
+    })
     
     return df
 
@@ -81,10 +129,12 @@ def explore_data(df):
     print("\n[EDA] Eksplorasi Data:")
     print("=" * 50)
     print(f"Jumlah Sampel: {df.shape[0]}")
-    print(f"Jumlah Fitur: {df.shape[1] - 2}")  # Minus target dan species
+    print(f"Jumlah Fitur: {df.shape[1] - 1}")  # Minus target
     print(f"\nMissing Values:\n{df.isnull().sum()}")
     print(f"\nDuplikat: {df.duplicated().sum()} baris")
-    print(f"\nDistribusi Target:\n{df['species'].value_counts()}")
+    print(f"\nDistribusi Target:")
+    print(f"   0 (No Disease): {(df['target'] == 0).sum()} sampel")
+    print(f"   1 (Disease):    {(df['target'] == 1).sum()} sampel")
 
 
 def preprocess_data(df, test_size=0.2, random_state=42):
@@ -108,13 +158,13 @@ def preprocess_data(df, test_size=0.2, random_state=42):
     print("=" * 50)
     
     # 1. Memisahkan fitur dan target
-    feature_cols = ['sepal length (cm)', 'sepal width (cm)', 
-                    'petal length (cm)', 'petal width (cm)']
+    feature_cols = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg',
+                    'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
     X = df[feature_cols]
     y = df['target']
     
     print(f"[OK] Fitur: {feature_cols}")
-    print(f"[OK] Target: target (0=setosa, 1=versicolor, 2=virginica)")
+    print(f"[OK] Target: target (0=No Disease, 1=Disease)")
     
     # 2. Train-test split
     X_train, X_test, y_train, y_test = train_test_split(
@@ -194,15 +244,15 @@ def main():
     print("=" * 60)
     print("AUTOMATE PREPROCESSING - EKSPERIMEN SML")
     print("Author: Christian Gideon Valent")
-    print("Dataset: Iris")
+    print("Dataset: Heart Disease (UCI)")
     print("=" * 60)
     
     # Tentukan path
     script_dir = os.path.dirname(os.path.abspath(__file__))
     base_dir = os.path.dirname(script_dir)
     
-    raw_data_path = os.path.join(base_dir, 'iris_raw', 'iris_raw.csv')
-    output_dir = os.path.join(script_dir, 'iris_preprocessing')
+    raw_data_path = os.path.join(base_dir, 'heart_raw', 'heart_raw.csv')
+    output_dir = os.path.join(script_dir, 'heart_preprocessing')
     
     # 1. Buat/Muat dataset mentah
     if not os.path.exists(raw_data_path):
@@ -225,9 +275,9 @@ def main():
     
     # Ringkasan
     print("\n[SUMMARY] Ringkasan Preprocessing:")
-    print(f"   - Dataset: Iris ({df.shape[0]} sampel)")
-    print(f"   - Fitur: {len(feature_names)} fitur numerik")
-    print(f"   - Missing Values: 0")
+    print(f"   - Dataset: Heart Disease ({df.shape[0]} sampel)")
+    print(f"   - Fitur: {len(feature_names)} fitur")
+    print(f"   - Missing Values: 0 (sudah di-handle)")
     print(f"   - Scaling: StandardScaler")
     print(f"   - Split: 80% train, 20% test (stratified)")
     print(f"   - Output: {output_dir}")
